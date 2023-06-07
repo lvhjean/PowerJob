@@ -27,6 +27,8 @@ import tech.powerjob.server.remote.transporter.TransportService;
 import tech.powerjob.server.remote.transporter.impl.ServerURLFactory;
 import tech.powerjob.server.remote.worker.WorkerClusterQueryService;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -66,6 +68,7 @@ public class DispatchService {
     @UseCacheLock(type = "processJobInstance", key = "#instanceId", concurrencyLevel = 1024)
     public void redispatchAsync(Long instanceId, int originStatus) {
         // 将状态重置为等待派发
+        log.warn("Dispatch:[{redispatchAsync}],将状态重置为等待派发");
         instanceInfoRepository.updateStatusAndGmtModifiedByInstanceIdAndOriginStatus(instanceId, originStatus, InstanceStatus.WAITING_DISPATCH.getV(), new Date());
     }
 
@@ -74,6 +77,7 @@ public class DispatchService {
      */
     public void redispatchBatchAsyncLockFree(List<Long> instanceIdList, int originStatus) {
         // 将状态重置为等待派发
+        log.warn("Dispatch:[{redispatchBatchAsyncLockFree}],将状态重置为等待派发");
         instanceInfoRepository.updateStatusAndGmtModifiedByInstanceIdListAndOriginStatus(instanceIdList, originStatus, InstanceStatus.WAITING_DISPATCH.getV(), new Date());
     }
 
@@ -99,6 +103,8 @@ public class DispatchService {
         // 允许从外部传入实例信息，减少 io 次数
         // 检查当前任务是否被取消
         InstanceInfoDO instanceInfo = instanceInfoOptional.orElseGet(() -> instanceInfoRepository.findByInstanceId(instanceId));
+        log.info("============================================================{}=", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        log.info("InstanceInfoDO:{}", instanceInfo);
         Long jobId = instanceInfo.getJobId();
         if (CANCELED.getV() == instanceInfo.getStatus()) {
             log.info("[Dispatcher-{}|{}] cancel dispatch due to instance has been canceled", jobId, instanceId);
@@ -163,6 +169,7 @@ public class DispatchService {
             return;
         }
         List<String> workerIpList = suitableWorkers.stream().map(WorkerInfo::getAddress).collect(Collectors.toList());
+        log.info("所有Woker的IP: {}", CollectionUtils.firstElement(workerIpList));
         // 构造任务调度请求
         ServerScheduleJobReq req = constructServerScheduleJobReq(jobInfo, instanceInfo, workerIpList);
 

@@ -12,6 +12,7 @@ import tech.powerjob.common.enums.InstanceStatus;
 import tech.powerjob.common.enums.TimeExpressionType;
 import tech.powerjob.common.model.LifeCycle;
 import tech.powerjob.server.common.constants.SwitchableStatus;
+import tech.powerjob.server.common.module.WorkerInfo;
 import tech.powerjob.server.common.timewheel.holder.InstanceTimeWheelService;
 import tech.powerjob.server.core.DispatchService;
 import tech.powerjob.server.core.instance.InstanceService;
@@ -25,6 +26,7 @@ import tech.powerjob.server.persistence.remote.repository.JobInfoRepository;
 import tech.powerjob.server.persistence.remote.repository.WorkflowInfoRepository;
 import tech.powerjob.server.remote.transporter.TransportService;
 import tech.powerjob.server.remote.worker.WorkerClusterManagerService;
+import tech.powerjob.server.remote.worker.WorkerClusterQueryService;
 
 import java.util.*;
 
@@ -50,6 +52,7 @@ public class PowerScheduleService {
     private final DispatchService dispatchService;
 
     private final InstanceService instanceService;
+    private final WorkerClusterQueryService workerClusterQueryService;
 
     private final WorkflowInstanceManager workflowInstanceManager;
 
@@ -60,6 +63,7 @@ public class PowerScheduleService {
     private final WorkflowInfoRepository workflowInfoRepository;
 
     private final InstanceInfoRepository instanceInfoRepository;
+
 
     private final JobService jobService;
 
@@ -74,17 +78,17 @@ public class PowerScheduleService {
         try {
             final List<Long> allAppIds = appInfoRepository.listAppIdByCurrentServer(transportService.defaultProtocol().getAddress());
             if (CollectionUtils.isEmpty(allAppIds)) {
-                log.info("[NormalScheduler] current server has no app's job to schedule.");
+                log.info("[NormalScheduler] 当前服务器没有要计划的应用程序作业.");
                 return;
             }
             scheduleNormalJob0(timeExpressionType, allAppIds);
         } catch (Exception e) {
-            log.error("[NormalScheduler] schedule cron job failed.", e);
+            log.error("[NormalScheduler] 计划cron作业失败.", e);
         }
         long cost = System.currentTimeMillis() - start;
-        log.info("[NormalScheduler] {} job schedule use {} ms.", timeExpressionType, cost);
+        log.info("[NormalScheduler] {} 作业计划使用 {} ms.", timeExpressionType, cost);
         if (cost > SCHEDULE_RATE) {
-            log.warn("[NormalScheduler] The database query is using too much time({}ms), please check if the database load is too high!", cost);
+            log.warn("[NormalScheduler] 数据库查询使用的时间太长({}ms), 请检查数据库负载是否过高!", cost);
         }
     }
 
@@ -164,9 +168,13 @@ public class PowerScheduleService {
 
                 // 1. 批量写日志表
                 Map<Long, Long> jobId2InstanceId = Maps.newHashMap();
-                log.info("[NormalScheduler] These {} jobs will be scheduled: {}.", timeExpressionType.name(), jobInfos);
+                log.info("[NormalScheduler] These {} jobs 将列入计划: {}.", timeExpressionType.name(), jobInfos);
 
                 jobInfos.forEach(jobInfo -> {
+
+                    List<WorkerInfo> suitableWorkers = workerClusterQueryService.getSuitableWorkers(jobInfo);
+                    log.info("工作 workerInfo.size:{}", suitableWorkers.size());
+
                     Long instanceId = instanceService.create(jobInfo.getId(), jobInfo.getAppId(), jobInfo.getJobParams(), null, null, jobInfo.getNextTriggerTime()).getInstanceId();
                     jobId2InstanceId.put(jobInfo.getId(), instanceId);
                 });

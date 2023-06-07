@@ -3,6 +3,7 @@ package tech.powerjob.server.web.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,6 +30,7 @@ import java.util.TimeZone;
  * @author tjq
  * @since 2020/4/4
  */
+@Slf4j
 @RestController
 @RequestMapping("/server")
 @RequiredArgsConstructor
@@ -45,6 +47,7 @@ public class ServerController implements ServerInfoAware {
 
     @GetMapping("/assert")
     public ResultDTO<Long> assertAppName(String appName) {
+        log.info("=============    assertAppName[{}]    ======================", appName);
         Optional<AppInfoDO> appInfoOpt = appInfoRepository.findByAppName(appName);
         return appInfoOpt.map(appInfoDO -> ResultDTO.success(appInfoDO.getId())).
                 orElseGet(() -> ResultDTO.failed(String.format("app(%s) is not registered! Please register the app in oms-console first.", appName)));

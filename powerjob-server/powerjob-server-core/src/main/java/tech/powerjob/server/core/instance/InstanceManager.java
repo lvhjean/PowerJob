@@ -178,6 +178,7 @@ public class InstanceManager implements TransportServiceAware {
             return;
         }
         // 带条件更新
+        log.warn("带条件更新:{}", instanceInfo);
         final int i = instanceInfoRepository.updateStatusChangeInfoByInstanceIdAndStatus(instanceInfo.getLastReportTime(), instanceInfo.getGmtModified(), instanceInfo.getRunningTimes(), instanceInfo.getStatus(), instanceInfo.getInstanceId(), originStatus);
         if (i == 0) {
             log.warn("[InstanceManager-{}] update instance status failed, maybe the instance status has been changed by other thread. discard this status change,{}", instanceId, instanceInfo);
