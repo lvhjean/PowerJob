@@ -43,9 +43,18 @@ public class WebHookAlarmService implements Alarmable {
             if (!webHook.startsWith(HTTP_PROTOCOL_PREFIX) && !webHook.startsWith(HTTPS_PROTOCOL_PREFIX)) {
                 webHook = HTTP_PROTOCOL_PREFIX + webHook;
             }
+            
+            // 基于DingDing机器人和微信机器人消息发送格式定义
+
+            JSONObject content = new JSONObject();
+            content.put("content", JSONObject.toJSONString(alarm));
+            
+            JSONObject body = new JSONObject();
+            body.put("msgtype", "text");
+            body.put("text", content);
 
             MediaType jsonType = MediaType.parse(OmsConstant.JSON_MEDIA_TYPE);
-            RequestBody requestBody = RequestBody.create(jsonType, JSONObject.toJSONString(alarm));
+            RequestBody requestBody = RequestBody.create(jsonType, body.toJSONString());
 
             try {
                 String response = HttpUtils.post(webHook, requestBody);
