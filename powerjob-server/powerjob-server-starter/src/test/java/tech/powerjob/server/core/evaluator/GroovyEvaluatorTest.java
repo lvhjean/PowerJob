@@ -20,6 +20,7 @@ public class GroovyEvaluatorTest {
     private final HashMap<String, String> SIMPLE_CONTEXT = new HashMap<>();
 
     private final HashMap<String, String> COMPLEX_CONTEXT = new HashMap<>();
+    private final HashMap<String, String> COMPLEX_CONTEXT2 = new HashMap<>();
 
     {
         // simple context
@@ -40,6 +41,11 @@ public class GroovyEvaluatorTest {
         map.put("e1",e1);
         COMPLEX_CONTEXT.put("map",JsonUtils.toJSONString(map));
 
+        HashMap<String, Object> map2 = new HashMap<>();
+        map2.put("compute","add");
+        map2.put("num","7");        
+        COMPLEX_CONTEXT2.put("initParams", JsonUtils.toJSONString(map2));
+
     }
 
     @Test
@@ -49,9 +55,16 @@ public class GroovyEvaluatorTest {
     }
 
     @Test
+    public void testSimpleEval11() {
+        Object res = groovyEvaluator.evaluate("var x = false; return x;", null);
+        Assertions.assertEquals(false, res);
+    }
+
+    @Test
     public void testSimpleEval2() {
         // inject simple context
-        Object res = groovyEvaluator.evaluate("var res = context.k3; res;", SIMPLE_CONTEXT);
+        System.out.println("上下文信息:"+ JsonUtils.toJSONString(COMPLEX_CONTEXT2));
+        Object res = groovyEvaluator.evaluate("var e3 = new groovy.json.JsonSlurper().parseText(context.initParams); e3.num>10;", COMPLEX_CONTEXT2);
         Boolean s = JsonUtils.parseObjectUnsafe(res.toString(), Boolean.class);
         Assertions.assertEquals(false, s);
     }

@@ -41,6 +41,7 @@ public class AlarmCenter {
     public void alarmFailed(Alarm alarm, List<UserInfoDO> targetUserList) {
         POOL.execute(() -> BEANS.forEach(alarmable -> {
             try {
+                log.info("runClass.name:{}", alarmable.getClass().getName());
                 alarmable.onFailed(alarm, targetUserList);
             }catch (Exception e) {
                 log.warn("[AlarmCenter] alarm failed.", e);
